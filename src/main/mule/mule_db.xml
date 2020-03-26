@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="cc4b0d7d-7d31-476d-9e5c-2f2b33d27302" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<db:config name="Database_Config" doc:name="Database Config" doc:id="9abda70b-09e4-4472-ac56-e063b27a05a7" >
+		<db:my-sql-connection host="mudb.learn.mulesoft.com" port="3306" user="mule" password="mule" database="training" />
+	</db:config>
+	<flow name="mule_dbFlow" doc:id="1551bf40-afe4-49ae-8f91-82d312dc9ed6" >
+		<http:listener doc:name="Listener" doc:id="2457e9e3-72f2-4ec7-b2dc-ada5021701d8" config-ref="HTTP_Listener_config" path="/selectAccounts"/>
+		<logger level="INFO" doc:name="Logger" doc:id="1ec606e1-51b9-4146-9c77-6fe847919617" message="connecting to database"/>
+		<db:select doc:name="Select" doc:id="adf3b4ce-27eb-47cc-98e3-548618dd8519" config-ref="Database_Config">
+			<db:sql >select * from accounts</db:sql>
+		</db:select>
+		<ee:transform doc:name="Transform Message" doc:id="69e91708-f065-4750-84ce-8226fd65cc2e" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="mule_dbFlow1" doc:id="67b83386-0711-456d-aff6-cf3fb7d8ae97" >
+		<http:listener doc:name="Listener" doc:id="fa889e06-7245-45ee-9b1c-1c70fd5ffee9" config-ref="HTTP_Listener_config" path="/selectAccountByState"/>
+		<logger level="INFO" doc:name="Logger" doc:id="76b7fcb4-4a40-401e-bf22-775a14459fcd" message="connecting to DB"/>
+		<set-variable value="#[attributes.queryParams.state]" doc:name="Set Variable" doc:id="0bf05ade-6b92-405a-9545-ecfb01ef59ad" variableName="state"/>
+		<db:select doc:name="Select" doc:id="b110d92e-839f-4d6c-9493-1ed4dda5de48" config-ref="Database_Config">
+			<db:sql >select * from accounts where state= :value</db:sql>
+			<db:input-parameters ><![CDATA[#[{'value': vars.state}]]]></db:input-parameters>
+		</db:select>
+		<ee:transform doc:name="Transform Message" doc:id="62c9fe4a-ae91-4b87-90b7-46d403226a37" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+</mule>
