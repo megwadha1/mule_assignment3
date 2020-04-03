@@ -10,13 +10,13 @@ http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/
 		<http:listener-connection host="0.0.0.0" port="8081" />
 	</http:listener-config>
 	<db:config name="Database_Config" doc:name="Database Config" doc:id="9abda70b-09e4-4472-ac56-e063b27a05a7" >
-		<db:my-sql-connection host="mudb.learn.mulesoft.com" port="3306" user="mule" password="mule" database="training" />
+		<db:my-sql-connection host="localhost" port="3306" user="root" password="megha1" database="test_schema" />
 	</db:config>
 	<flow name="mule_dbFlow" doc:id="1551bf40-afe4-49ae-8f91-82d312dc9ed6" >
-		<http:listener doc:name="Listener" doc:id="2457e9e3-72f2-4ec7-b2dc-ada5021701d8" config-ref="HTTP_Listener_config" path="/selectAccounts"/>
+		<http:listener doc:name="Listener" doc:id="2457e9e3-72f2-4ec7-b2dc-ada5021701d8" config-ref="HTTP_Listener_config" path="/selectEmployee"/>
 		<logger level="INFO" doc:name="Logger" doc:id="1ec606e1-51b9-4146-9c77-6fe847919617" message="connecting to database"/>
 		<db:select doc:name="Select" doc:id="adf3b4ce-27eb-47cc-98e3-548618dd8519" config-ref="Database_Config">
-			<db:sql >select * from accounts</db:sql>
+			<db:sql >select * from employee</db:sql>
 		</db:select>
 		<ee:transform doc:name="Transform Message" doc:id="69e91708-f065-4750-84ce-8226fd65cc2e" >
 			<ee:message >
@@ -28,11 +28,11 @@ payload]]></ee:set-payload>
 		</ee:transform>
 	</flow>
 	<flow name="mule_dbFlow1" doc:id="67b83386-0711-456d-aff6-cf3fb7d8ae97" >
-		<http:listener doc:name="Listener" doc:id="fa889e06-7245-45ee-9b1c-1c70fd5ffee9" config-ref="HTTP_Listener_config" path="/selectAccountByState"/>
+		<http:listener doc:name="Listener" doc:id="fa889e06-7245-45ee-9b1c-1c70fd5ffee9" config-ref="HTTP_Listener_config" path="/selectEmployeeByName"/>
 		<logger level="INFO" doc:name="Logger" doc:id="76b7fcb4-4a40-401e-bf22-775a14459fcd" message="connecting to DB"/>
-		<set-variable value="#[attributes.queryParams.state]" doc:name="Set Variable" doc:id="0bf05ade-6b92-405a-9545-ecfb01ef59ad" variableName="state"/>
+		<set-variable value="#[attributes.queryParams.name]" doc:name="Set Variable" doc:id="0bf05ade-6b92-405a-9545-ecfb01ef59ad" variableName="state"/>
 		<db:select doc:name="Select" doc:id="b110d92e-839f-4d6c-9493-1ed4dda5de48" config-ref="Database_Config">
-			<db:sql >select * from accounts where state= :value</db:sql>
+			<db:sql >select * from employee where name= :value</db:sql>
 			<db:input-parameters ><![CDATA[#[{'value': vars.state}]]]></db:input-parameters>
 		</db:select>
 		<ee:transform doc:name="Transform Message" doc:id="62c9fe4a-ae91-4b87-90b7-46d403226a37" >
@@ -43,5 +43,49 @@ output application/json
 payload]]></ee:set-payload>
 			</ee:message>
 		</ee:transform>
+	</flow>
+	<flow name="mule_dbFlow2" doc:id="b3b1b9af-817d-47f5-88e3-ecab9597048f" >
+		<http:listener doc:name="Listener" doc:id="b41fc3c8-cb70-45be-899c-c820660c3d72" config-ref="HTTP_Listener_config" path="/insertIntoEmployee">
+			<http:response >
+				<http:body ><![CDATA[#["Data inserted"]]]></http:body>
+			</http:response>
+		</http:listener>
+		<db:insert doc:name="Insert" doc:id="b0cc749f-f909-4104-8820-4c06af3e6085" config-ref="Database_Config">
+			<db:sql >insert into employee (empId, name, email, designation) values (:id, :name, :email, :designation)</db:sql>
+			<db:input-parameters ><![CDATA[#[{"id": payload.id,
+	"name": payload.name,
+	"email": payload.email,
+	"designation": payload.designation
+}]]]></db:input-parameters>
+		</db:insert>
+		<logger level="INFO" doc:name="Logger" doc:id="2170c5ed-887c-4bfc-ab03-1f59bb7f0566" message="in database"/>
+	</flow>
+	<flow name="mule_dbFlow3" doc:id="a3756f34-a8b9-4fb8-9615-b681598c65b1" >
+		<http:listener doc:name="Listener" doc:id="1268864e-7720-4fc3-b676-f42d369e8fe6" config-ref="HTTP_Listener_config" path="/updateDesignation">
+			<http:response >
+				<http:body ><![CDATA[#["Row updated"]]]></http:body>
+			</http:response>
+		</http:listener>
+		<db:update doc:name="Update" doc:id="bdca0bd1-29f9-4118-a87f-d5dc1a4e9231" config-ref="Database_Config">
+			<db:sql >update employee set designation =:designation where empId = :id</db:sql>
+			<db:input-parameters ><![CDATA[#[{
+	"designation": payload.designation,
+	"id" : payload.id
+}]]]></db:input-parameters>
+		</db:update>
+		<logger level="INFO" doc:name="Logger" doc:id="d9e0c1e1-6876-451a-859d-d2a65db81332" message="In database"/>
+	</flow>
+	<flow name="mule_dbFlow4" doc:id="eea6301f-0425-46cb-ab2b-b59a1e3f91bc" >
+		<http:listener doc:name="Listener" doc:id="fd44ada4-bbaf-45a1-a7ba-0b233f9e6520" config-ref="HTTP_Listener_config" path="/delete">
+			<http:response >
+				<http:body ><![CDATA[#["Row deleted"]]]></http:body>
+			</http:response>
+		</http:listener>
+		<logger level="INFO" doc:name="Logger" doc:id="1cfe995c-0444-49de-9969-53872502f513" message="in database"/>
+		<set-variable value="#[attributes.queryParams.id]" doc:name="Set Variable" doc:id="d9cffefa-a6c2-4160-99dd-d34618a03e59" variableName="id"/>
+		<db:delete doc:name="Delete" doc:id="93dbb2b4-67be-45c9-a902-8e842fbbe0af" config-ref="Database_Config">
+			<db:sql >delete from employee where empId = :id</db:sql>
+			<db:input-parameters ><![CDATA[#[{'id':vars.id}]]]></db:input-parameters>
+		</db:delete>
 	</flow>
 </mule>
